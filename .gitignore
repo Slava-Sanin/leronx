@@ -34,6 +34,7 @@ config.local.py
 *.db
 output/
 renders/
+script.txt
 
 # Local API keys
 .env
