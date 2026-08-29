@@ -76,30 +76,72 @@ class RenderEngine:
             clips.append(clip)
         return clips
 
+    def _image_assets(self, scene: Scene) -> list[Path]:
+        found: list[Path] = []
+        for item in scene.assets:
+            path = Path(item)
+            if path.exists() and path.suffix.lower() in _IMAGE_SUFFIXES:
+                found.append(path)
+        return found
+
+    def _ken_burns(self, duration: float, move: int, shot: str) -> str:
+        width, height = self.config.resolution
+        fps = self.config.fps
+        frames = max(int(duration * fps), 1)
+        fade = min(0.28, duration / 5)
+        fade_out = max(duration - fade, 0.0)
+        if shot == "wide" or move % 3 == 1:
+            zoom = "if(eq(on,1),1.16,max(zoom-0.0014,1.0))"
+            x = "iw/2-(iw/zoom/2)"
+            y = "ih/2-(ih/zoom/2)-on*0.15"
+        elif shot == "closeup" or move % 3 == 2:
+            zoom = "min(zoom+0.0018,1.22)"
+            x = "iw/2-(iw/zoom/2)+on*0.35"
+            y = "ih/2-(ih/zoom/2)"
+        else:
+            zoom = "min(zoom+0.0013,1.14)"
+            x = "iw/2-(iw/zoom/2)"
+            y = "ih/2-(ih/zoom/2)+on*0.2"
+        return (
+            f"zoompan=z='{zoom}':d={frames}:x='{x}':y='{y}':s={width}x{height}:fps={fps},"
+            f"fade=t=in:st=0:d={fade:.3f},fade=t=out:st={fade_out:.3f}:d={fade:.3f},"
+            f"format=yuv420p"
+        )
+
+    def _render_image_clip(self, source: Path, dest: Path, duration: float, move: int, shot: str) -> None:
+        cmd = [
+            self._ffmpeg, "-y", "-loop", "1", "-i", str(source),
+            "-vf", self._ken_burns(duration, move, shot),
+            "-t", f"{duration:.3f}",
+            "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+            "-an", str(dest),
+        ]
+        self._run(cmd, f"still {dest.stem}")
+
     def _render_scene(self, scene: Scene, clip: Path) -> None:
         width, height = self.config.resolution
         fps = self.config.fps
         duration = max(float(scene.duration or 0), 0.5)
         fade = min(0.35, duration / 4)
         fade_out_start = max(duration - fade, 0.0)
+        images = self._image_assets(scene)
         source = Path(scene.assets[0]) if scene.assets else None
 
-        if source and source.exists() and source.suffix.lower() in _IMAGE_SUFFIXES:
-            frames = max(int(duration * fps), 1)
-            vf = (
-                f"zoompan=z='min(zoom+0.0012,1.12)':d={frames}:"
-                f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
-                f"s={width}x{height}:fps={fps},"
-                f"fade=t=in:st=0:d={fade:.3f},fade=t=out:st={fade_out_start:.3f}:d={fade:.3f},"
-                f"format=yuv420p"
-            )
-            cmd = [
-                self._ffmpeg, "-y", "-loop", "1", "-i", str(source),
-                "-vf", vf, "-t", f"{duration:.3f}",
-                "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
-                "-an", str(clip),
-            ]
-        elif source and source.exists():
+        if len(images) > 1:
+            parts: list[Path] = []
+            each = duration / len(images)
+            for offset, image in enumerate(images):
+                part = clip.with_name(f"{clip.stem}_shot{offset}.mp4")
+                self._render_image_clip(image, part, each, offset, scene.shot_type)
+                parts.append(part)
+            self._concat(parts, clip)
+            return
+
+        if images:
+            self._render_image_clip(images[0], clip, duration, scene.index, scene.shot_type)
+            return
+
+        if source and source.exists():
             vf = (
                 f"scale={width}:{height}:force_original_aspect_ratio=increase,"
                 f"crop={width}:{height},fps={fps},"

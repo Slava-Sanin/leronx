@@ -67,6 +67,7 @@ def main() -> int:
     print(f"Language: {language}")
     print(f"Voice:    {voice_id}")
     print(f"Duration: {duration}s")
+    print(f"Motion:   on (Pollinations / Luma / Replicate / Runway)")
     print(f"Output:   {OUTPUT_PATH}")
 
     pipeline = Pipeline(
@@ -82,6 +83,8 @@ def main() -> int:
             resolution=(1280, 720),
             fps=30,
             voice=voice_id,
+            visual_style="animation",
+            generate_motion=True,
         )
     )
     video = pipeline.render(

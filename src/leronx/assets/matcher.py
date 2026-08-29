@@ -6,6 +6,7 @@ Uses keyword extraction + provider APIs (Pexels, Pixabay, etc.)
 from __future__ import annotations
 import logging
 import re
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -13,6 +14,8 @@ from typing import Optional
 from ..scenes.graph import SceneGraph
 from .cards import render_title_card
 from .downloader import download_file
+from .imagine import generate_still
+from .motion import generate_clip
 from .providers import PexelsProvider, PixabayProvider, StockProvider
 
 logger = logging.getLogger("leronx.assets")
@@ -90,13 +93,33 @@ class AssetMatcher:
         work_dir: Path,
         resolution: tuple[int, int] = (1920, 1080),
         topic: str = "",
+        visual_style: str = "animation",
+        generate_motion: bool = True,
     ) -> SceneGraph:
-        """Attach a local visual (stock clip or title card) to every scene."""
+        """Attach animated clips, then stills, then stock. Text cards are last resort."""
         clips_dir = Path(work_dir) / "assets"
         clips_dir.mkdir(parents=True, exist_ok=True)
         used_urls: set[str] = set()
         for scene in graph.scenes:
             if scene.assets:
+                continue
+            if generate_motion:
+                clip = generate_clip(
+                    clips_dir / f"scene_{scene.index:03d}.mp4",
+                    topic=topic,
+                    narration=scene.narration,
+                    shot_type=scene.shot_type,
+                    style=visual_style,
+                    duration=scene.duration,
+                    resolution=resolution,
+                )
+                if clip:
+                    scene.assets.append(str(clip))
+                    time.sleep(2)
+                    continue
+            stills = self._generate_stills(scene, clips_dir, resolution, topic, visual_style)
+            if stills:
+                scene.assets.extend(str(path) for path in stills)
                 continue
             keywords = self.extract_keywords(scene.narration or topic)
             query = " ".join(keywords[:3]) or topic
@@ -104,6 +127,7 @@ class AssetMatcher:
             if local:
                 scene.assets.append(str(local))
                 continue
+            logger.warning("Falling back to a title card for scene %s", scene.index)
             card = clips_dir / f"card_{scene.index:03d}.png"
             spoken = (scene.narration or topic or "LeronX").strip()
             words = spoken.split()
@@ -117,6 +141,36 @@ class AssetMatcher:
             )
             scene.assets.append(str(card))
         return graph
+
+    def _generate_stills(
+        self,
+        scene,
+        dest_dir: Path,
+        resolution: tuple[int, int],
+        topic: str,
+        visual_style: str,
+    ) -> list[Path]:
+        shots = [scene.shot_type or "medium"]
+        if scene.duration >= 8:
+            alt = "closeup" if scene.shot_type == "wide" else "wide"
+            shots.append(alt)
+        paths: list[Path] = []
+        for variant, shot in enumerate(shots):
+            dest = dest_dir / f"scene_{scene.index:03d}_{variant}.jpg"
+            still = generate_still(
+                dest,
+                topic=topic,
+                narration=scene.narration,
+                shot_type=shot,
+                style=visual_style,
+                index=scene.index,
+                variant=variant,
+                resolution=resolution,
+            )
+            if still:
+                paths.append(still)
+                time.sleep(1.5)
+        return paths
 
     def _search(self, query: str, per_page: int) -> list[dict]:
         for provider in self.providers:

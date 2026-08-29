@@ -20,7 +20,11 @@ class TestPipeline:
 
     def test_render_with_mock(self):
         p = Pipeline(PipelineConfig(gpu_enabled=False))
-        with patch.object(p, "_render_video") as mock_render, patch.object(p, "_synthesize_voice", return_value=None):
+        with (
+            patch.object(p, "_render_video") as mock_render,
+            patch.object(p, "_synthesize_voice", return_value=None),
+            patch.object(p._assets, "enrich_graph", side_effect=lambda graph, *args, **kwargs: graph),
+        ):
             result = p.render(prompt="Test topic", output_path="/tmp/test_render.mp4")
             assert mock_render.called
             assert len(result.scenes) > 0

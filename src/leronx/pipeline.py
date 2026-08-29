@@ -51,6 +51,8 @@ class PipelineConfig:
     burn_subtitles: bool = True
     voice: Optional[str] = None
     keep_work: bool = False
+    visual_style: str = "animation"
+    generate_motion: bool = True
 
 
 @dataclass
@@ -152,6 +154,8 @@ class Pipeline:
             job_dir,
             resolution=self.config.resolution,
             topic=prompt or cfg.topic,
+            visual_style=self.config.visual_style,
+            generate_motion=self.config.generate_motion,
         )
         graph = self.registry.run_stage("pre_render", graph, self.config)
 
