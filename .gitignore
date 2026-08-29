@@ -34,3 +34,7 @@ config.local.py
 *.db
 output/
 renders/
+
+# Local API keys
+.env
+docker/.env
