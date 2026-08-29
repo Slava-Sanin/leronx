@@ -7,7 +7,7 @@ from leronx.scenes import SceneGraph, Scene
 
 class TestRenderConfig:
     def test_default_codec(self):
-        assert RenderConfig().get_ffmpeg_codec() == "libx265"
+        assert RenderConfig().get_ffmpeg_codec() == "libx264"
     def test_hwaccel_none(self):
         assert RenderConfig(gpu=False).get_hwaccel_flags() == []
 

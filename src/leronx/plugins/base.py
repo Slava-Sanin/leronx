@@ -1,9 +1,12 @@
 """Plugin base class — extend any stage of the pipeline."""
 from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from typing import Any
 
-class Plugin(ABC):
+PluginMeta = ABCMeta
+
+
+class Plugin(ABC, metaclass=PluginMeta):
     """
     Base class for all pipeline plugins.
     

@@ -6,7 +6,7 @@ from leronx import Pipeline, PipelineConfig
 class TestPipeline:
     def test_init_default(self):
         p = Pipeline()
-        assert p.config.gpu_enabled is True
+        assert p.config.gpu_enabled is False
 
     def test_generate_script(self):
         p = Pipeline()

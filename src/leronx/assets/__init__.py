@@ -1,3 +1,4 @@
 from .matcher import AssetMatcher
-from .providers import StockProvider
-__all__ = ["AssetMatcher", "StockProvider"]
+from .providers import StockProvider, PexelsProvider, PixabayProvider
+from .cards import render_title_card
+__all__ = ["AssetMatcher", "StockProvider", "PexelsProvider", "PixabayProvider", "render_title_card"]

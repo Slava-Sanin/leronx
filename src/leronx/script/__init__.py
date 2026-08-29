@@ -1,3 +1,4 @@
 from .config import ScriptConfig
 from .generator import ScriptGenerator
-__all__ = ["ScriptConfig", "ScriptGenerator"]
+from .narration import extract_narration
+__all__ = ["ScriptConfig", "ScriptGenerator", "extract_narration"]

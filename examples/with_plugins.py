@@ -15,8 +15,7 @@ class VintageFilter(Plugin, metaclass=PluginMeta):
     stage = "pre_render"
     priority = 10
 
-    def process(self, context):
-        # Add vintage color grading
+    def process(self, context, config):
         if hasattr(context, "filters"):
             context.filters.append("eq=contrast=1.1:saturation=0.7:brightness=0.05")
         return context
@@ -27,8 +26,8 @@ class IntroOverlay(Plugin, metaclass=PluginMeta):
     stage = "post_render"
     priority = 5
 
-    def process(self, context):
-        print("   🎨 Adding intro overlay...")
+    def process(self, context, config):
+        print("   Adding intro overlay...")
         return context
 
 def main():

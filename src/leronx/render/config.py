@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 @dataclass
 class RenderConfig:
-    gpu: bool = True
-    codec: str = "h265"
+    gpu: bool = False
+    codec: str = "h264"
     resolution: tuple[int, int] = (1920, 1080)
     fps: int = 30
     bitrate: str = "8M"

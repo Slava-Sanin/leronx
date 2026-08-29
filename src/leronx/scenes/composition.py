@@ -25,8 +25,12 @@ class CompositionPlanner:
         return graph
 
     def _parse_script(self, script: str) -> list[str]:
-        parts = re.split(r'\[Scene \d+[^\]]*\]|\n\n', script)
-        return [p.strip() for p in parts if p.strip() and not p.startswith('[')]
+        blocks: list[str] = []
+        for part in re.split(r"\n\s*\n", script):
+            text = re.sub(r"\[[^\]]+\]", "", part).strip()
+            if text:
+                blocks.append(text)
+        return blocks
 
     def _pick_shot(self, idx: int, total: int) -> str:
         if idx == 0: return "wide"

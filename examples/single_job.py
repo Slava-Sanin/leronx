@@ -15,9 +15,9 @@ from leronx.render.config import RenderConfig
 def main():
     # Configure pipeline
     config = PipelineConfig(
-        gpu_enabled=True,
-        codec="h265",
-        resolution=(1920, 1080),
+        gpu_enabled=False,
+        codec="h264",
+        resolution=(1280, 720),
         fps=30,
     )
 
