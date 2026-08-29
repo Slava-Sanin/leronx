@@ -35,6 +35,7 @@ config.local.py
 output/
 renders/
 script.txt
+topic.txt
 
 # Local API keys
 .env
